@@ -25,7 +25,7 @@
             <tbody>
                 #loop(assignments, "assignment") {
                 <tr>
-                    <td>#(assignment.name)</td>
+                    <td>#(assignment.name) (#(assignment.dueDateAsString))</td>
                     <td>
                         <form action="/admin/assignments/#(assignment.id)/vocables" method="get"><button type="submit" class="btn btn-success btn-sm">View</button></form>
                     </td>
@@ -45,24 +45,24 @@
         <h4>Add assignment</h4>
     </div>
 </div>
+<div class="row">
 
-<form action="/admin/assignments" method="post">
-    <div class="row">
-        <div class="col-md-3 col-md-offset-2">
-            <div class="form-group">
+        <form action="/admin/assignments" class="form-inline" method="post">
+            <div class="col-md-6 col-md-offset-2">
+                <div class="form-group">
                 <label for="name">Name</label>
                 <input type="text" class="form-control" id="name" name="name" placeholder="Name"/>
             </div>
-        </div>
-        <div class="col-md-7"></div>
-    </div>
-    
-    <div class="row">
-        <div class="col-md-10 col-md-offset-2">
+            <div class="form-group">
+                <label for="dueDate">DueDate</label>
+                <input type="text" class="form-control" id="dueDate" name="dueDate" placeholder="Due date"/>
+            </div>
+            </div>
+                <div class="col-md-4">
             <button type="submit" class="btn btn-default">Submit</button>
-        </div>
+            </div>
+            
+        </form>
     </div>
-    
-</form>
-
+</div>
 }

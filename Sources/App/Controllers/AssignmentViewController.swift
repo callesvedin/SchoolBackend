@@ -18,11 +18,11 @@ class AssignmentViewController {
     
     func indexView(request:Request) throws -> ResponseRepresentable {
         let assignments = try Assignment.all()
+        
         let parameters = try Node(node:[
-            "assignments":assignments.makeNode()
+            "assignments":assignments.makeNode(context: ["inWeb":true])
         ])
-        
-        
+                
         return try drop.view.make("assignments",parameters)
     }
     
@@ -31,6 +31,10 @@ class AssignmentViewController {
             throw Abort.badRequest
         }
         var assignment = Assignment(name:name)
+        if let dueDateString = request.data["dueDate"]?.string {
+            assignment.dueDateAsString = dueDateString
+        }
+        
         try assignment.save()
         
         return Response(redirect: "/admin/assignments")

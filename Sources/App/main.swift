@@ -20,9 +20,6 @@ vocableController.addRoutes(drop:drop)
 let assignmentController = AssignmentController()
 assignmentController.addRoutes(drop:drop)
 
-let vocableViewController = VocableViewController()
-vocableViewController.addRoutes(drop: drop)
-
 let assignmentViewController = AssignmentViewController()
 assignmentViewController.addRoutes(drop: drop)
 

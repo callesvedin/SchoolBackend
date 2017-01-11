@@ -7,17 +7,7 @@ import HTTP
 final class AssignmentController {
     
     
-//    func addRoutes(drop: Droplet) {
-//        let basic = drop.grouped("users")
-//        basic.get(handler: index)
-//        basic.post(handler: create)
-//        basic.delete(TILUser.self, handler: delete)
-//        basic.get(TILUser.self, "acronyms", handler: acronymsIndex)
-//    }
-
-    
     func addRoutes(drop:Droplet) {
-//        drop.get("assignmentvocables",Assignment.self,handler:showVocables)
         let assignmentsGroup = drop.grouped("assignments")
         assignmentsGroup.get(handler:index)
         assignmentsGroup.get(Assignment.self, handler:show)

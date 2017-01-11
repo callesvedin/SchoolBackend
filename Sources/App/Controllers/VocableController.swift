@@ -4,8 +4,7 @@ import Vapor
 import HTTP
 
 final class VocableController {
- 
-    
+     
     func addRoutes(drop:Droplet) {        
         let vocablesGroup = drop.grouped("vocables")
         vocablesGroup.get(Vocable.self, handler:show)

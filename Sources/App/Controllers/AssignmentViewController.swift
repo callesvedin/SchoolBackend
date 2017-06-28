@@ -1,26 +1,26 @@
-
-
-//import Foundation
+import Foundation
 import Vapor
 import HTTP
+import FluentProvider
+import LeafProvider
 
 class AssignmentViewController {
 
     func addRoutes(drop:Droplet)  {
         let admin = drop.grouped("admin","assignments")
         admin.get(handler:indexView)
-        admin.get(Assignment.self,"vocables",handler:showVocables)
-        admin.post(Assignment.self,"vocables",handler:addVocable)
-        admin.post(Assignment.self,"vocables",Vocable.self,handler:deleteVocable)
+        admin.get(Assignment.parameter,"vocables",handler:showVocables)
+        admin.post(Assignment.parameter,"vocables",handler:addVocable)
+        admin.post(Assignment.parameter,"vocables",Vocable.parameter,handler:deleteVocable)
         admin.post(handler:addAssignment)
-        admin.post(Assignment.self, handler:deleteAssignment)
+        admin.post(Assignment.parameter, handler:deleteAssignment)
     }
     
     func indexView(request:Request) throws -> ResponseRepresentable {
         let assignments = try Assignment.all()
         
         let parameters = try Node(node:[
-            "assignments":assignments.makeNode(context: ["inWeb":true])
+            "assignments":assignments.makeNode(in: ObjectContext(["inWeb":true]))
         ])
                 
         return try drop.view.make("assignments",parameters)
@@ -30,47 +30,49 @@ class AssignmentViewController {
         guard let name = request.data["name"]?.string else {
             throw Abort.badRequest
         }
-        var assignment = Assignment(name:name)
+        var dueDate:Date? = nil
         if let dueDateString = request.data["dueDate"]?.string {
-            assignment.dueDateAsString = dueDateString
+            let dateFormatter = DateFormatter()
+            dateFormatter.dateFormat = "yyyy-MM-dd"
+            dueDate = dateFormatter.date(from: dueDateString)
         }
         
+        let assignment = Assignment(name:name, dueDate:dueDate)
         try assignment.save()
         
-        return Response(redirect: "/admin/assignments")
-        
+        return Response(redirect: "/admin/assignments")        
     }
     
-    func deleteAssignment(request:Request, assignment:Assignment) throws -> ResponseRepresentable {
+    func deleteAssignment(request:Request) throws -> ResponseRepresentable {
+        let assignment = try request.parameters.next(Assignment.self)
         try assignment.delete()
         return Response(redirect: "/admin/assignments")
     }    
     
-    func showVocables(request:Request, assignment:Assignment) throws -> ResponseRepresentable {
-        let assignmentVocables = try assignment.vocables()
+    func showVocables(request:Request) throws -> ResponseRepresentable {
+        let assignment = try request.parameters.next(Assignment.self)
+        let assignmentVocables = try assignment.vocables.all()
         let parameters = try Node(node:[
-            "assignment":assignment.makeNode(),
-            "vocables":assignmentVocables.makeNode()
+            "assignment":assignment.makeNode(in: nil),
+            "vocables":assignmentVocables.makeNode(in: nil)
         ])
         return try drop.view.make("vocables",parameters)
     }
     
-    func addVocable(request:Request, assignment:Assignment) throws -> ResponseRepresentable {
+    func addVocable(request:Request) throws -> ResponseRepresentable {
         guard let swedish = request.data["swedish"]?.string, let english = request.data["english"]?.string else {
             throw Abort.badRequest
         }
-        var vocable = Vocable(assignmentId: assignment.id, swedish: swedish, english: english)
+        
+        let assignment = try request.parameters.next(Assignment.self)
+        let vocable = Vocable(assignmentId: assignment.id!, swedish: swedish, english: english)
         try vocable.save()
-        
-        return try showVocables(request:request, assignment:assignment)
-        
+        return Response(redirect: "vocables")
     }
     
-    func deleteVocable(request:Request,assignment:Assignment, vocable:Vocable) throws -> ResponseRepresentable {
+    func deleteVocable(request:Request) throws -> ResponseRepresentable {
+        let vocable = try request.parameters.next(Vocable.self)
         try vocable.delete()
-        return try showVocables(request:request, assignment:assignment)
+        return try showVocables(request:request)
     }
-    
-    
-    
 }

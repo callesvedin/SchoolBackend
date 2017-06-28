@@ -1,22 +1,23 @@
 import Vapor
-import VaporMySQL
+import MySQLProvider
 import HTTP
+import LeafProvider
 
 /*
- To revert database :  vapor run prepare --revert
- 
+ To revert database :  vapor run --prepare --revert
  */
 
+let config = try Config()
+try config.addProvider(MySQLProvider.Provider.self)
+config.preparations.append(Assignment.self)
+config.preparations.append(Vocable.self)
 
-let drop = Droplet()
-try drop.addProvider(VaporMySQL.Provider)
-drop.preparations += Vocable.self
-drop.preparations += Assignment.self
+try config.addProvider(LeafProvider.Provider.self)
 
+let drop = try Droplet(config)
 
 let vocableController = VocableController()
 vocableController.addRoutes(drop:drop)
-//drop.resource("vocables", vocableController)
 
 let assignmentController = AssignmentController()
 assignmentController.addRoutes(drop:drop)
@@ -24,10 +25,5 @@ assignmentController.addRoutes(drop:drop)
 let assignmentViewController = AssignmentViewController()
 assignmentViewController.addRoutes(drop: drop)
 
-/*drop.get("test") {request in
-    let input:Valid<OnlyAlphanumeric> = try request.data["input"].validated()
-    return "test \(input)"
-}*/
-
-drop.run()
+try drop.run()
 

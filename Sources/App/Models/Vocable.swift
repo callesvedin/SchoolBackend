@@ -1,56 +1,78 @@
 
-//import Foundation
 import Vapor
-import Fluent
+import FluentProvider
 
-final class Vocable:Model {
-    var id:Node?
+final class Vocable:NodeInitializable, NodeRepresentable, Model {
+    static let foreignIdKey = "vocable_id"
+    let storage = Storage()
     var exists:Bool = false
-    var assignmentId: Node?
     var swedish:String
     var english:String
+    var assignmentId:Identifier
     
-    init(assignmentId:Node?, swedish:String, english:String) {
-        self.id = nil
-        self.assignmentId=assignmentId
+    init(assignmentId:Identifier,swedish:String, english:String) {
+        self.assignmentId = assignmentId
         self.swedish = swedish
         self.english = english
+        
     }
     
     init(node:Node, in context:Context) throws {
-        self.id = node["id"]
-        self.assignmentId = try node.extract("assignment_id")
-        self.swedish = try node.extract("swedish")
-        self.english = try node.extract("english")
+        self.assignmentId = try node.get("assignment_id")
+        self.swedish = try node.get("swedish")
+        self.english = try node.get("english")
     }
     
-    func makeNode(context: Context) throws -> Node {
-        return try Node(node:[
-            "id":self.id,
-            "assignment_id":self.assignmentId,
-            "swedish":self.swedish,
-            "english":self.english
-        ])
+    init(node:Node) throws {
+        self.assignmentId = try node.get("assignment_id")
+        self.swedish = try node.get("swedish")
+        self.english = try node.get("english")
     }
     
     
-    static func prepare(_ database: Database) throws {
-        try database.create(entity, closure: { creator in
-            creator.id()
-            creator.string("swedish")
-            creator.string("english")
-            creator.parent(Assignment.self, optional:false)
-        }
-        )
+    func makeNode(in context: Context?) throws -> Node {
+        var node = Node(context)
+        try node.set("id", self.id)
+        try node.set("assignment_id", self.assignmentId)
+        try node.set("swedish", self.swedish)
+        try node.set("english", self.english)
+        return node
+        
     }
     
-    static func revert(_ database: Database) throws {
-        try database.delete("vocables")
+    public required init(row: Row) throws {
+        assignmentId = try row.get(Assignment.foreignIdKey)
+        swedish = try row.get("swedish")
+        english = try row.get("english")
+    }
+    
+    func makeRow() throws -> Row {
+        var row = Row()
+        try row.set("swedish", swedish)
+        try row.set("english", english)
+        try row.set(Assignment.foreignIdKey, assignmentId)
+        return row
     }
 }
 
+extension Vocable: Preparation {
+    static func prepare(_ database: Database) throws {
+        try database.create(self) { vocables in
+            vocables.id()
+            vocables.string("swedish")
+            vocables.string("english")
+            vocables.parent(Assignment.self)
+        }
+    }
+    
+    static func revert(_ database: Database) throws {
+        try database.delete(self)
+    }
+}
+
+
 extension Vocable {
-    func assignment() throws -> Assignment? {
-        return try parent(assignmentId,nil,Assignment.self).get()
+    var assignment:Parent<Vocable, Assignment>{
+        return parent(id:assignmentId)
     }
 }

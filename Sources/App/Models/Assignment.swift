@@ -1,68 +1,78 @@
-
 import Foundation
 import Vapor
-import Fluent
+import FluentProvider
 
-final class Assignment:Model {
-    var id:Node?
+final class Assignment:NodeInitializable, NodeRepresentable, Model {
+    static let foreignIdKey = "assignment_id"
+    let storage = Storage()
     var exists:Bool = false
     var name:String
     var dueDate:Date?
     
     init(name:String, dueDate:Date? = nil) {
-        self.id = nil
         self.name = name
         self.dueDate = dueDate ?? Date()
     }
     
+    init(node:Node) throws {
+        self.name = try node.get("name")
+        self.dueDate = try node.get("due")
+    }
+    
     init(node:Node, in context:Context) throws {
-        self.id = node["id"]
-        self.name = try node.extract("name")
-        let due:Double = try node.extract("due")
-        if due>0 {
-            self.dueDate = Date.init(timeIntervalSince1970: due)
-        }else{
-            self.dueDate = nil
+        self.name = try node.get("name")
+        self.dueDate = try node.get("due")
+    }
+    
+    func makeNode(in context: Context?) throws -> Node {
+        var node=Node(context)
+        try node.set("id", self.id)
+        try node.set("name",name)
+        try node.set("due",dueDate)
+        
+        if let context = context as? ObjectContext<String, Bool> {
+            if let inWeb = context.object["inWeb"]
+            {
+                if (inWeb == true){
+                    try node.set("dueDateAsString", self.dueDateAsString)
+                }
+            }
         }
+        return node
     }
     
-    func makeNode(context: Context) throws -> Node {
-        
-        if let context = context as? Dictionary<String, Any>, let inWeb = context["inWeb"] as? Bool, inWeb == true {
-            return try Node(node:[
-                "id":id,
-                "name":name,
-                "due":dueDate?.timeIntervalSince1970,
-                "dueDateAsString":self.dueDateAsString
-            ])
-        }else{
-            return try Node(node:[
-                "id":id,
-                "name":name,
-                "due":dueDate?.timeIntervalSince1970
-            ])
-        }        
+    
+    init(row: Row) throws {
+        name = try row.get("name")
+        dueDate = try row.get("due")
     }
     
-        
-    static func prepare(_ database: Database) throws {
-        try database.create(entity, closure: { assignments in
-            assignments.id()
-            assignments.string("name")
-            assignments.double("due")
-        })
+    func makeRow() throws -> Row {
+        var row = Row()
+        try row.set("name", name)
+        try row.set("due", dueDate)
+        return row
     }
     
-  
-    static func revert(_ database: Database) throws {
-        try database.delete(entity)
-    }
 }
 
+extension Assignment:Preparation {
+        static func prepare(_ database: Database) throws {
+            try database.create(self) { assignments in
+                assignments.id()
+                assignments.string("name")
+                assignments.date("due")
+            }
+        }
+    
+        static func revert(_ database: Database) throws {
+            try database.delete(self)
+        }
+}
 
 extension Assignment {
-    func vocables() throws -> [Vocable] {
-        return try children(nil,Vocable.self).all()
+    var vocables:Children<Assignment, Vocable> {
+        return children()
     }
 }
 
@@ -76,11 +86,6 @@ extension Assignment {
             dateFormatter.dateFormat = "yyyy-MM-dd"
             return dateFormatter.string(from: due)
             
-        }
-        set(dateString) {
-            let dateFormatter = DateFormatter()
-            dateFormatter.dateFormat = "yyyy-MM-dd"
-            dueDate = dateFormatter.date(from: dateString)!
         }
     }
 }

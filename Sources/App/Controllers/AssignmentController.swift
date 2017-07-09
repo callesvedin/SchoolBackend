@@ -17,7 +17,7 @@ final class AssignmentController {
     func showVocables(request:Request) throws -> ResponseRepresentable {
         let assignment = try request.parameters.next(Assignment.self)
         let vocables = try assignment.vocables.all()
-        return try JSON(node:vocables)
+        return try JSON(node:vocables) 
     }
     
     func index(request:Request) throws -> ResponseRepresentable {

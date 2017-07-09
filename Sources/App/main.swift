@@ -1,5 +1,6 @@
 import Vapor
-import MySQLProvider
+//import MySQLProvider
+import FluentProvider
 import HTTP
 import LeafProvider
 
@@ -8,7 +9,8 @@ import LeafProvider
  */
 
 let config = try Config()
-try config.addProvider(MySQLProvider.Provider.self)
+//try config.addProvider(MySQLProvider.Provider.self)
+try config.addProvider(FluentProvider.Provider.self)
 config.preparations.append(Assignment.self)
 config.preparations.append(Vocable.self)
 

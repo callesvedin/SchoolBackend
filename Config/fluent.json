@@ -1,3 +1,4 @@
 {
-    "driver":"mysql"
+    "_driver":"mysql",
+    "driver":"memory"
 }
